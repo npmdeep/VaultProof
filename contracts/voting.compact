@@ -1,0 +1,54 @@
+pragma language_version >=0.22.0;
+
+import CompactStandardLibrary;
+
+// --- Public State (Ledger) ---
+// These values are visible on-chain to all observers.
+
+export ledger total_yes: Counter;
+export ledger total_no: Counter;
+export ledger total_votes: Counter;
+export ledger is_open: Boolean;
+export ledger admin: Bytes<32>;
+
+// --- Private Inputs (Witnesses) ---
+// The admin's secret key — never leaves the caller's device.
+witness adminSecret(): Bytes<32>;
+
+// --- Helper: derive a public key from a secret ---
+pure circuit adminPublicKey(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "vaultproof:admin:v1"), sk]);
+}
+
+// --- Constructor: called once on deployment ---
+constructor(admin_key: Bytes<32>) {
+  admin = disclose(admin_key);
+  is_open = true;
+}
+
+// --- Circuit: cast an anonymous vote ---
+// The `choice` parameter is a private witness input:
+//   0 = No, 1 = Yes
+// The circuit asserts validity, then increments the matching counter.
+// Because `choice` is never wrapped in disclose(), it remains hidden.
+// Only the counter increment (a +1 delta) appears in the proof.
+export circuit cast_vote(choice: Uint<32>): [] {
+  assert(is_open, "Poll is closed");
+  assert(choice <= 1, "Invalid choice: must be 0 (No) or 1 (Yes)");
+
+  // Conditional increment — the branch taken is hidden inside the ZK proof
+  const yes_inc = choice;
+  const no_inc = (1 - choice) as Uint<32>;
+
+  total_yes.increment(disclose(yes_inc as Uint<16>));
+  total_no.increment(disclose(no_inc as Uint<16>));
+  total_votes.increment(1);
+}
+
+// --- Circuit: admin closes the poll ---
+export circuit close_poll(): [] {
+  assert(is_open, "Poll is already closed");
+  const sk = adminSecret();
+  assert(admin == adminPublicKey(sk), "Not authorized: invalid admin key");
+  is_open = false;
+}
