@@ -102,12 +102,11 @@ export type ConnectedSession = {
 // Main session factory — call after wallet.connect()
 // ---------------------------------------------------------------------------
 export async function createConnectedSession(api: any): Promise<ConnectedSession> {
-  // Fetch in parallel — never await sequentially
-  const [config, unshieldedAddr, shieldedAddress] = await Promise.all([
-    api.getConfiguration(),
-    api.getUnshieldedAddress(),
-    api.getShieldedAddresses(),
-  ]);
+  // Fetch sequentially to avoid overwhelming the wallet RPC bridge
+  // Lace in particular can throw APIError if multiple requests are sent simultaneously
+  const config = await api.getConfiguration();
+  const unshieldedAddr = await api.getUnshieldedAddress();
+  const shieldedAddress = await api.getShieldedAddresses();
 
   // Must be called before any SDK operations
   setNetworkId(config.networkId);

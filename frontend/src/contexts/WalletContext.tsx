@@ -76,15 +76,17 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       
       if (!wallet) throw new Error('No wallet found. Please install a Midnight wallet.');
       // 1AM supports .connect(network), Lace standardizes on .enable()
-      const api = typeof wallet.connect === 'function' 
+      const api = walletType === '1am' && typeof wallet.connect === 'function' 
         ? await wallet.connect(network) 
         : await wallet.enable();
+      console.log('Wallet authorized successfully, initializing session...');
       const sess = await createConnectedSession(api);
       setSession(sess);
       setAddress(sess.unshieldedAddress);
       setIsConnected(true);
       return sess;
     } catch (err: any) {
+      console.error('Wallet connection error stack:', err);
       const msg = err?.message || String(err);
       if (msg.includes('syncing')) {
         alert('1AM Wallet is currently syncing with the network. Please open your 1AM extension popup, wait for sync to complete (100%), and try connecting again.');
