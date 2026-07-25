@@ -162,7 +162,7 @@ describe(`Voting Contract (${network})`, () => {
         compiledContract: CompiledVotingContract,
         privateStateId: PRIVATE_STATE_ID,
         initialPrivateState: {
-          adminSecret: () => adminKeyBytes,
+          adminSecret: adminKeyBytes,
         },
         args: [adminKeyBytes],
       });
@@ -237,6 +237,9 @@ describe(`Voting Contract (${network})`, () => {
       compiledContract: CompiledVotingContract,
       contractAddress,
       privateStateId: PRIVATE_STATE_ID,
+      initialPrivateState: {
+        adminSecret: adminKeyBytes,
+      },
       circuitId: 'close_poll',
       args: [],
     });
