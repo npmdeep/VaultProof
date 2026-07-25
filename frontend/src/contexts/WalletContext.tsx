@@ -65,7 +65,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     return () => clearInterval(id);
   }, []);
 
-  const connect = useCallback(async (network = 'preview') => {
+  const connect = useCallback(async (network = 'preprod') => {
     if (connectingRef.current) return;
     connectingRef.current = true;
     setIsConnecting(true);
@@ -79,7 +79,20 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       // CRITICAL: Call connect() exactly ONCE. Multiple connect() calls corrupt
       // Lace's internal message bridge, causing all subsequent API calls to fail
       // with "Wallet is unavailable".
-      const api = await wallet.connect(network);
+      let api: any;
+      try {
+        api = await wallet.connect(network);
+      } catch (connectErr: any) {
+        const r = String(connectErr?.reason || connectErr?.message || '');
+        // If network mismatch, try the other common network ONCE
+        if (r.includes('Network ID mismatch')) {
+          const fallback = network === 'preprod' ? 'preview' : 'preprod';
+          console.log(`Network '${network}' mismatched, trying '${fallback}'...`);
+          api = await wallet.connect(fallback);
+        } else {
+          throw connectErr;
+        }
+      }
       console.log(`Wallet connected on network '${network}'`);
 
       const sess = await createConnectedSession(api);
