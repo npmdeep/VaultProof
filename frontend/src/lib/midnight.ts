@@ -102,31 +102,33 @@ export type ConnectedSession = {
 // Main session factory — call after wallet.connect()
 // ---------------------------------------------------------------------------
 export async function createConnectedSession(api: any): Promise<ConnectedSession> {
-  // Step 1: Poll getConnectionStatus() until the wallet reports 'connected'.
-  // The official DApp Connector reference checks this before using any other methods.
-  // If the wallet is still syncing, this will eventually resolve once ready.
-  console.log('[session] Waiting for wallet connection status...');
-  const MAX_WAIT_MS = 30_000;
-  const POLL_MS = 2_000;
-  const start = Date.now();
-
-  while (Date.now() - start < MAX_WAIT_MS) {
+  // Step 1: Wait for wallet to become available (Lace returns 'unavailable' while syncing)
+  console.log('[session] Waiting for wallet to become available (waiting for sync)...');
+  
+  let unshieldedAddress = null;
+  let attempts = 0;
+  
+  while (!unshieldedAddress) {
     try {
-      const status = await api.getConnectionStatus();
-      console.log('[session] Connection status:', status);
-      if (status?.status === 'connected') break;
+      attempts++;
+      console.log(`[session] Attempt ${attempts}: Getting unshielded address...`);
+      const res = await api.getUnshieldedAddress();
+      unshieldedAddress = res.unshieldedAddress;
     } catch (e: any) {
-      console.warn('[session] getConnectionStatus() not ready yet:', e?.reason || e?.message);
+      const reason = String(e?.reason || e?.message || e);
+      if (reason.includes('unavailable') || reason.includes('disconnected')) {
+        console.warn(`[session] Wallet still unavailable (likely syncing). Retrying in 3s... (${attempts})`);
+        // Notify the user via console/alert logic in the caller, but keep retrying here
+        await new Promise((r) => setTimeout(r, 3000));
+      } else {
+        throw e; // Throw other errors (like locked, network mismatch, user rejected)
+      }
     }
-    await new Promise((r) => setTimeout(r, POLL_MS));
   }
 
-  // Step 2: Get unshielded address (official docs call this BEFORE getConfiguration)
-  console.log('[session] Getting unshielded address...');
-  const { unshieldedAddress } = await api.getUnshieldedAddress();
-  console.log('[session] Address:', unshieldedAddress);
+  console.log('[session] Address successfully retrieved:', unshieldedAddress);
 
-  // Step 3: Get configuration (service URIs)
+  // Step 2: Get configuration (service URIs)
   console.log('[session] Getting configuration...');
   const config = await api.getConfiguration();
   console.log('[session] Config:', config);
