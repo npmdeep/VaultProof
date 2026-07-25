@@ -12,6 +12,7 @@ import {
   waitForFunds,
 } from '@midnight-ntwrk/testkit-js';
 import pino from 'pino';
+import { persistentHash, CompactTypeBytes, CompactTypeVector } from '@midnight-ntwrk/compact-runtime';
 
 import { getConfig } from '../config.js';
 import {
@@ -83,14 +84,26 @@ function resolveSecret(net: string): WalletSecret {
   );
 }
 
-// Derive the admin public key the same way the contract does
+// Derive the admin secret key bytes from a hex seed
 function deriveAdminKey(seedHex: string): Uint8Array {
-  // For testing we use a deterministic admin key derived from a fixed seed
   const bytes = new Uint8Array(32);
   for (let i = 0; i < 32; i++) {
     bytes[i] = parseInt(seedHex.slice(i * 2, i * 2 + 2), 16);
   }
   return bytes;
+}
+
+// Replicate the Compact contract's adminPublicKey pure circuit:
+//   persistentHash<Vector<2, Bytes<32>>>([pad(32, "vaultproof:admin:v1"), sk])
+const _bytesDescriptor = new CompactTypeBytes(32);
+const _vecDescriptor = new CompactTypeVector(2, _bytesDescriptor);
+const ADMIN_PREFIX = new Uint8Array([
+  118, 97, 117, 108, 116, 112, 114, 111, 111, 102, 58, 97, 100, 109, 105, 110,
+  58, 118, 49, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+]); // pad(32, "vaultproof:admin:v1")
+
+function adminPublicKey(sk: Uint8Array): Uint8Array {
+  return persistentHash(_vecDescriptor, [ADMIN_PREFIX, sk]);
 }
 
 const ADMIN_SECRET = '0000000000000000000000000000000000000000000000000000000000000099';
@@ -157,6 +170,7 @@ describe(`Voting Contract (${network})`, () => {
     logger.info('Deploying Voting Contract...');
 
     const adminKeyBytes = deriveAdminKey(ADMIN_SECRET);
+    const adminPubKey = adminPublicKey(adminKeyBytes);
 
     const deployed: DeployedContract<Contract> =
       await (deployContract<Contract>)(providers, {
@@ -165,7 +179,7 @@ describe(`Voting Contract (${network})`, () => {
         initialPrivateState: {
           adminSecret: adminKeyBytes,
         },
-        args: [adminKeyBytes],
+        args: [adminPubKey],
       });
 
     contractAddress = deployed.deployTxData.public.contractAddress;
