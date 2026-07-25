@@ -102,20 +102,29 @@ export type ConnectedSession = {
 // Main session factory — call after wallet.connect()
 // ---------------------------------------------------------------------------
 export async function createConnectedSession(api: any): Promise<ConnectedSession> {
-  console.log('[createConnectedSession] Step 1: Getting configuration...');
-  let config: any;
+  // CRITICAL: hintUsage() MUST be called before any other API methods.
+  // Lace uses this as a permission gate — without it, all calls return "Wallet is unavailable".
+  console.log('[createConnectedSession] Step 0: Hinting usage to wallet...');
   try {
-    config = await api.getConfiguration();
-    console.log('[createConnectedSession] Config retrieved:', config);
-  } catch (err) {
-    console.warn('[createConnectedSession] api.getConfiguration() failed, using preprod defaults:', err);
-    config = {
-      networkId: 'preview',
-      indexerUri: 'https://indexer.preview.midnight.network/api/v4/graphql',
-      indexerWsUri: 'wss://indexer.preview.midnight.network/api/v4/graphql/ws',
-      substrateNodeUri: 'https://rpc.preview.midnight.network',
-    };
+    await api.hintUsage([
+      'getConfiguration',
+      'getUnshieldedAddress',
+      'getShieldedAddresses',
+      'getProvingProvider',
+      'balanceUnsealedTransaction',
+      'submitTransaction',
+    ]);
+    console.log('[createConnectedSession] hintUsage completed');
+  } catch (e) {
+    console.warn('[createConnectedSession] hintUsage failed (may not be required by this wallet):', e);
   }
+
+  // Small delay to let wallet settle after hintUsage
+  await new Promise((r) => setTimeout(r, 1000));
+
+  console.log('[createConnectedSession] Step 1: Getting configuration...');
+  const config = await api.getConfiguration();
+  console.log('[createConnectedSession] Config retrieved:', config);
 
   console.log('[createConnectedSession] Step 2: Getting unshielded address...');
   let unshieldedAddr: any = null;
