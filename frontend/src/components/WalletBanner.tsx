@@ -2,7 +2,7 @@ import React from 'react';
 import { useWallet } from '../contexts/WalletContext';
 
 export default function WalletBanner() {
-  const { address, isConnected, walletType, walletStatus, isConnecting, connect, disconnect } = useWallet();
+  const { address, isConnected, walletType, walletStatus, isConnecting, connect, connectManual, disconnect } = useWallet();
 
   if (walletStatus === 'checking') {
     return (
@@ -28,20 +28,49 @@ export default function WalletBanner() {
     );
   }
 
+  const handleConnect = async () => {
+    try {
+      await connect('preprod');
+    } catch {
+      // Error already handled inside connect()
+    }
+  };
+
+  const handleManualConnect = () => {
+    const addr = prompt(
+      'Enter your Midnight unshielded wallet address:\n\n' +
+      '(Open your Lace wallet → Click Receive → Copy the Unshielded Address)'
+    );
+    if (addr && addr.trim().length > 10) {
+      connectManual(addr.trim());
+    }
+  };
+
   return (
-    <button
-      className="btn btn-primary btn-sm"
-      onClick={() => connect('preprod')}
-      disabled={isConnecting || walletStatus === 'not-found'}
-    >
-      {isConnecting ? (
-        <>
-          <span className="spinner-small"></span>
-          Connecting
-        </>
-      ) : (
-        'Connect Wallet'
+    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+      <button
+        className="btn btn-primary btn-sm"
+        onClick={handleConnect}
+        disabled={isConnecting || walletStatus === 'not-found'}
+      >
+        {isConnecting ? (
+          <>
+            <span className="spinner-small"></span>
+            Connecting
+          </>
+        ) : (
+          'Connect Wallet'
+        )}
+      </button>
+      {walletStatus === 'not-found' && (
+        <button
+          className="btn btn-sm"
+          onClick={handleManualConnect}
+          style={{ opacity: 0.8, fontSize: '0.75rem' }}
+        >
+          Enter Address
+        </button>
       )}
-    </button>
+    </div>
   );
 }
