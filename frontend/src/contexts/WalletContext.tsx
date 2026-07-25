@@ -82,6 +82,14 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       setAddress(sess.unshieldedAddress);
       setIsConnected(true);
       return sess;
+    } catch (err: any) {
+      const msg = err?.message || String(err);
+      if (msg.includes('syncing')) {
+        alert('1AM Wallet is currently syncing with the network. Please open your 1AM extension popup, wait for sync to complete (100%), and try connecting again.');
+      } else {
+        console.error('Wallet connection error:', err);
+      }
+      throw err;
     } finally {
       connectingRef.current = false;
       setIsConnecting(false);
