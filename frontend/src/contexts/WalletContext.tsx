@@ -76,7 +76,10 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       const wallet =
         (window as any).midnight?.['1am'] ?? (window as any).midnight?.mnLace;
       if (!wallet) throw new Error('No wallet found. Please install 1AM or Lace wallet.');
-      const api = await wallet.connect(network);
+      // 1AM supports .connect(network), Lace standardizes on .enable()
+      const api = typeof wallet.connect === 'function' 
+        ? await wallet.connect(network) 
+        : await wallet.enable();
       const sess = await createConnectedSession(api);
       setSession(sess);
       setAddress(sess.unshieldedAddress);
