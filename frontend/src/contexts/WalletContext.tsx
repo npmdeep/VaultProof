@@ -46,19 +46,16 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const startedAt = Date.now();
     const id = setInterval(() => {
-      const w1am = (window as any).midnight?.['1am'];
-      const wLace = (window as any).midnight?.mnLace;
-      if (w1am) {
-        setWalletType('1am');
-        setWalletStatus('detected');
-        clearInterval(id);
-        return;
-      }
-      if (wLace) {
-        setWalletType('lace');
-        setWalletStatus('detected');
-        clearInterval(id);
-        return;
+      const injected = (window as any).midnight;
+      if (injected) {
+        const wallets = Object.values(injected);
+        if (wallets.length > 0) {
+          const wallet: any = wallets[0];
+          setWalletType(wallet.name?.toLowerCase().includes('1am') ? '1am' : 'lace');
+          setWalletStatus('detected');
+          clearInterval(id);
+          return;
+        }
       }
       if (Date.now() - startedAt >= 6000) {
         setWalletStatus('not-found');
@@ -73,9 +70,11 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     connectingRef.current = true;
     setIsConnecting(true);
     try {
-      const wallet =
-        (window as any).midnight?.['1am'] ?? (window as any).midnight?.mnLace;
-      if (!wallet) throw new Error('No wallet found. Please install 1AM or Lace wallet.');
+      const injected = (window as any).midnight;
+      const wallets = injected ? Object.values(injected) : [];
+      const wallet: any = wallets[0];
+      
+      if (!wallet) throw new Error('No wallet found. Please install a Midnight wallet.');
       // 1AM supports .connect(network), Lace standardizes on .enable()
       const api = typeof wallet.connect === 'function' 
         ? await wallet.connect(network) 
