@@ -75,10 +75,8 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       const wallet: any = wallets[0];
       
       if (!wallet) throw new Error('No wallet found. Please install a Midnight wallet.');
-      // 1AM supports .connect(network), Lace standardizes on .enable()
-      const api = walletType === '1am' && typeof wallet.connect === 'function' 
-        ? await wallet.connect(network) 
-        : await wallet.enable();
+      // Both 1AM and Lace implement .connect(networkId) according to Midnight DAppConnectorAPI
+      const api = await wallet.connect(network);
       console.log('Wallet authorized successfully, initializing session...');
       const sess = await createConnectedSession(api);
       setSession(sess);
