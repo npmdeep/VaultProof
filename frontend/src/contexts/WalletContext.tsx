@@ -75,9 +75,30 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       const wallet: any = wallets[0];
       
       if (!wallet) throw new Error('No wallet found. Please install a Midnight wallet.');
-      // Both 1AM and Lace implement .connect(networkId) according to Midnight DAppConnectorAPI
-      const api = await wallet.connect(network);
-      console.log('Wallet authorized successfully, initializing session...');
+
+      // Try preferred network first, then fall back to preview/preprod/undeployed if network ID mismatches
+      const candidateNetworks = Array.from(new Set([network, 'preview', 'preprod', 'undeployed']));
+      let api: any = null;
+      let lastErr: any = null;
+
+      for (const net of candidateNetworks) {
+        try {
+          api = await wallet.connect(net);
+          console.log(`Wallet authorized successfully on network '${net}', initializing session...`);
+          break;
+        } catch (err: any) {
+          lastErr = err;
+          const reason = String(err?.reason || err?.message || err);
+          if (reason.includes('Network ID mismatch')) {
+            console.warn(`Wallet is not set to '${net}', trying next candidate network...`);
+            continue;
+          }
+          throw err;
+        }
+      }
+
+      if (!api) throw lastErr;
+
       const sess = await createConnectedSession(api);
       setSession(sess);
       setAddress(sess.unshieldedAddress);
