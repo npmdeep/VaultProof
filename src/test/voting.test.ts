@@ -234,13 +234,17 @@ describe(`Voting Contract (${network})`, () => {
 
     const adminKeyBytes = deriveAdminKey(ADMIN_SECRET);
 
+    // Seed the admin private state into the provider — submitCallTx
+    // requires the state to already exist for the given privateStateId.
+    await providers.privateStateProvider.set(
+      ADMIN_PRIVATE_STATE_ID,
+      { adminSecret: adminKeyBytes },
+    );
+
     await (submitCallTx<Contract, 'close_poll'>)(providers, {
       compiledContract: CompiledVotingContract,
       contractAddress,
       privateStateId: ADMIN_PRIVATE_STATE_ID,
-      initialPrivateState: {
-        adminSecret: adminKeyBytes,
-      },
       circuitId: 'close_poll',
       args: [],
     });
@@ -253,9 +257,9 @@ describe(`Voting Contract (${network})`, () => {
   it('Rejects votes after poll is closed', async () => {
     logger.info('Attempting vote on closed poll...');
 
-    // In Compact, a failed assert in the guaranteed phase causes a
-    // ContractRuntimeError during local circuit execution. We expect
-    // submitCallTx to throw because the circuit cannot be executed.
+    // Once the poll is closed, the guaranteed-phase assert(is_open) in
+    // cast_vote causes a ContractRuntimeError during local simulation,
+    // so submitCallTx should reject.
     let threw = false;
     try {
       await (submitCallTx<Contract, 'cast_vote'>)(providers, {
@@ -269,7 +273,7 @@ describe(`Voting Contract (${network})`, () => {
       threw = true;
     }
 
-    // Whether the circuit throws or succeeds, the tally must not change
+    // Whether the circuit throws or the tx rolls back, the tally must not change
     const state = await queryLedger(providers);
     expect(state.total_votes).toEqual(2n);
     logger.info(`Vote on closed poll handled correctly (threw=${threw}). Tallies unchanged: ${state.total_votes}`);
