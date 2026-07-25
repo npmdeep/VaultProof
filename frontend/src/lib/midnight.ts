@@ -118,7 +118,17 @@ export async function createConnectedSession(api: any): Promise<ConnectedSession
   }
 
   console.log('[createConnectedSession] Step 2: Getting unshielded address...');
-  const unshieldedAddr = await api.getUnshieldedAddress();
+  let unshieldedAddr: any = null;
+  for (let attempt = 1; attempt <= 5; attempt++) {
+    try {
+      unshieldedAddr = await api.getUnshieldedAddress();
+      if (unshieldedAddr?.unshieldedAddress) break;
+    } catch (e: any) {
+      console.warn(`[createConnectedSession] getUnshieldedAddress attempt ${attempt}/5 failed:`, e);
+      if (attempt === 5) throw e;
+      await new Promise((r) => setTimeout(r, 500));
+    }
+  }
   console.log('[createConnectedSession] Unshielded address retrieved:', unshieldedAddr);
   
   let shieldedAddress = { shieldedCoinPublicKey: '0'.repeat(64), shieldedEncryptionPublicKey: '0'.repeat(64) };
