@@ -111,6 +111,8 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
         alert('1AM Wallet is currently syncing with the network. Please open your 1AM extension popup, wait for sync to complete (100%), and try connecting again.');
       } else if (msg.includes('locked') || String(err?.reason || '').includes('locked')) {
         alert('Your wallet is locked! Please open your Lace wallet extension, enter your passcode to unlock it, and try connecting again.');
+      } else if (msg.includes('unavailable') || String(err?.reason || '').includes('unavailable')) {
+        alert('Lace Wallet is currently initializing or unavailable. Please open your Lace extension popup, make sure it is connected, and try connecting again.');
       } else {
         console.error('Wallet connection error:', err);
       }
