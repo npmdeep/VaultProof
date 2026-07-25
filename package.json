@@ -7,6 +7,8 @@
     "node": ">=22.0.0"
   },
   "scripts": {
+    "dev": "yarn --cwd frontend dev",
+    "build": "yarn --cwd frontend build",
     "compile": "compact compile contracts/voting.compact contracts/managed/voting",
     "test": "cross-env NODE_OPTIONS='--experimental-vm-modules' vitest run",
     "test:local": "cross-env MIDNIGHT_NETWORK=local yarn test",
