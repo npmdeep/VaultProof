@@ -102,18 +102,36 @@ export type ConnectedSession = {
 // Main session factory — call after wallet.connect()
 // ---------------------------------------------------------------------------
 export async function createConnectedSession(api: any): Promise<ConnectedSession> {
-  const config = await api.getConfiguration();
+  console.log('[createConnectedSession] Step 1: Getting configuration...');
+  let config: any;
+  try {
+    config = await api.getConfiguration();
+    console.log('[createConnectedSession] Config retrieved:', config);
+  } catch (err) {
+    console.warn('[createConnectedSession] api.getConfiguration() failed, using preprod defaults:', err);
+    config = {
+      networkId: 'preview',
+      indexerUri: 'https://indexer.preview.midnight.network/api/v4/graphql',
+      indexerWsUri: 'wss://indexer.preview.midnight.network/api/v4/graphql/ws',
+      substrateNodeUri: 'https://rpc.preview.midnight.network',
+    };
+  }
+
+  console.log('[createConnectedSession] Step 2: Getting unshielded address...');
   const unshieldedAddr = await api.getUnshieldedAddress();
+  console.log('[createConnectedSession] Unshielded address retrieved:', unshieldedAddr);
   
   let shieldedAddress = { shieldedCoinPublicKey: '0'.repeat(64), shieldedEncryptionPublicKey: '0'.repeat(64) };
   try {
+    console.log('[createConnectedSession] Step 3: Getting shielded addresses...');
     shieldedAddress = await api.getShieldedAddresses();
+    console.log('[createConnectedSession] Shielded addresses retrieved');
   } catch (e) {
-    console.warn('api.getShieldedAddresses() unavailable, proceeding with unshielded fallback:', e);
+    console.warn('[createConnectedSession] api.getShieldedAddresses() unavailable, proceeding with unshielded fallback:', e);
   }
 
   // Must be called before any SDK operations
-  setNetworkId(config.networkId);
+  setNetworkId(config.networkId || 'preview');
 
   // ZK assets are served from /managed relative to origin
   const zkConfigProvider = new FetchZkConfigProvider(
@@ -121,11 +139,21 @@ export async function createConnectedSession(api: any): Promise<ConnectedSession
     window.fetch.bind(window),
   );
 
-  const provingProvider = await api.getProvingProvider(zkConfigProvider);
+  let provingProvider: any;
+  try {
+    console.log('[createConnectedSession] Step 4: Getting proving provider...');
+    provingProvider = await api.getProvingProvider(zkConfigProvider);
+    console.log('[createConnectedSession] Proving provider retrieved');
+  } catch (e) {
+    console.warn('[createConnectedSession] api.getProvingProvider() unavailable:', e);
+  }
 
   // Use direct unprovenTx.prove() — do NOT use createProofProvider()
   const proofProvider = {
     async proveTx(unprovenTx: any, _config: any) {
+      if (!provingProvider) {
+        throw new Error('Proving provider is not supported by your wallet connection.');
+      }
       const { CostModel } = await import('@midnight-ntwrk/ledger-v8');
       return unprovenTx.prove(provingProvider, CostModel.initialCostModel());
     },
