@@ -21,6 +21,7 @@ type WalletContextType = {
   isConnecting: boolean;
   walletStatus: WalletStatus;
   session: ConnectedSession | null;
+  state: 'disconnected' | 'connecting' | 'connected';
   connect: (network?: string) => Promise<ConnectedSession | undefined>;
   disconnect: () => void;
 };
@@ -46,17 +47,10 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const startedAt = Date.now();
     const id = setInterval(() => {
-      const injected = (window as any).midnight;
-      if (injected) {
-        const wallets = Object.values(injected);
-        if (wallets.length > 0) {
-          const wallet: any = wallets[0];
-          setWalletType(wallet.name?.toLowerCase().includes('1am') ? '1am' : 'lace');
-          setWalletStatus('detected');
-          clearInterval(id);
-          return;
-        }
-      }
+      const w1am = (window as any).midnight?.['1am'];
+      const wLace = (window as any).midnight?.mnLace;
+      if (w1am) { setWalletType('1am'); setWalletStatus('detected'); clearInterval(id); return; }
+      if (wLace) { setWalletType('lace'); setWalletStatus('detected'); clearInterval(id); return; }
       if (Date.now() - startedAt >= 6000) {
         setWalletStatus('not-found');
         clearInterval(id);
@@ -65,34 +59,15 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     return () => clearInterval(id);
   }, []);
 
-  const connect = useCallback(async (network = 'preprod') => {
+  const connect = useCallback(async (network = 'preview') => {
     if (connectingRef.current) return;
     connectingRef.current = true;
     setIsConnecting(true);
     try {
-      const injected = (window as any).midnight;
-      const wallets = injected ? Object.values(injected) : [];
-      const wallet: any = wallets[0];
+      const wallet = (window as any).midnight?.['1am'] ?? (window as any).midnight?.mnLace;
+      if (!wallet) throw new Error('No wallet found. Please install 1AM or Lace wallet extension.');
 
-      if (!wallet) throw new Error('No wallet found. Please install a Midnight wallet.');
-
-      // CRITICAL: Call connect() exactly ONCE. Multiple connect() calls corrupt
-      // Lace's internal message bridge, causing all subsequent API calls to fail
-      // with "Wallet is unavailable".
-      let api: any;
-      try {
-        api = await wallet.connect(network);
-      } catch (connectErr: any) {
-        const r = String(connectErr?.reason || connectErr?.message || '');
-        // If network mismatch, try the other common network ONCE
-        if (r.includes('Network ID mismatch')) {
-          const fallback = network === 'preprod' ? 'preview' : 'preprod';
-          console.log(`Network '${network}' mismatched, trying '${fallback}'...`);
-          api = await wallet.connect(fallback);
-        } else {
-          throw connectErr;
-        }
-      }
+      const api = await wallet.connect(network);
       console.log(`Wallet connected on network '${network}'`);
 
       const sess = await createConnectedSession(api);
@@ -110,8 +85,6 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
           'Please open your wallet extension, go to Settings → Network, ' +
           'and switch to the correct network (Preview or Preprod), then try again.'
         );
-      } else if (reason.includes('syncing')) {
-        alert('Wallet is syncing with the network. Please wait for sync to complete and try again.');
       } else if (reason.includes('unavailable')) {
         alert(
           'Wallet is still initializing. Please:\n\n' +
@@ -136,22 +109,18 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     setSession(null);
     setWalletStatus('checking');
     setWalletType(null);
+    // Re-detect wallet after disconnect
     const startedAt = Date.now();
     const id = setInterval(() => {
-      const injected = (window as any).midnight;
-      if (injected) {
-        const wallets = Object.values(injected);
-        if (wallets.length > 0) {
-          const wallet: any = wallets[0];
-          setWalletType(wallet.name?.toLowerCase().includes('1am') ? '1am' : 'lace');
-          setWalletStatus('detected');
-          clearInterval(id);
-          return;
-        }
-      }
+      const w1am = (window as any).midnight?.['1am'];
+      const wLace = (window as any).midnight?.mnLace;
+      if (w1am) { setWalletType('1am'); setWalletStatus('detected'); clearInterval(id); return; }
+      if (wLace) { setWalletType('lace'); setWalletStatus('detected'); clearInterval(id); return; }
       if (Date.now() - startedAt >= 3000) { setWalletStatus('not-found'); clearInterval(id); }
     }, 200);
   }, []);
+
+  const state = isConnecting ? 'connecting' : isConnected ? 'connected' : 'disconnected';
 
   return (
     <WalletContext.Provider
@@ -162,6 +131,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
         isConnecting,
         walletStatus,
         session,
+        state,
         connect,
         disconnect,
       }}

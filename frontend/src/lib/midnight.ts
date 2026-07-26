@@ -102,44 +102,41 @@ export type ConnectedSession = {
 // Main session factory — call after wallet.connect()
 // ---------------------------------------------------------------------------
 export async function createConnectedSession(api: any): Promise<ConnectedSession> {
-  // Step 1: Wait for wallet to become available (Lace returns 'unavailable' while syncing)
-  console.log('[session] Waiting for wallet to become available (waiting for sync)...');
-  
-  let unshieldedAddress = null;
-  let attempts = 0;
-  
-  while (!unshieldedAddress) {
-    try {
-      attempts++;
-      console.log(`[session] Attempt ${attempts}: Getting unshielded address...`);
-      const res = await api.getUnshieldedAddress();
-      unshieldedAddress = res.unshieldedAddress;
-    } catch (e: any) {
-      const reason = String(e?.reason || e?.message || e);
-      if (reason.includes('unavailable') || reason.includes('disconnected')) {
-        console.warn(`[session] Wallet still unavailable (likely syncing). Retrying in 3s... (${attempts})`);
-        // Notify the user via console/alert logic in the caller, but keep retrying here
-        await new Promise((r) => setTimeout(r, 3000));
-      } else {
-        throw e; // Throw other errors (like locked, network mismatch, user rejected)
+  console.log('[session] Fetching wallet data...');
+
+  // Helper: retry getUnshieldedAddress for Lace wallet which needs sync time
+  async function getAddress(maxRetries = 10): Promise<string> {
+    for (let i = 1; i <= maxRetries; i++) {
+      try {
+        console.log(`[session] getUnshieldedAddress attempt ${i}/${maxRetries}...`);
+        const res = await api.getUnshieldedAddress();
+        if (res?.unshieldedAddress) return res.unshieldedAddress;
+      } catch (e: any) {
+        const reason = String(e?.reason || e?.message || e);
+        if (i === maxRetries) throw new Error(`Wallet unavailable after ${maxRetries} attempts: ${reason}`);
+        if (reason.includes('unavailable') || reason.includes('disconnected') || reason.includes('syncing')) {
+          console.warn(`[session] Wallet syncing, retry in 2s... (${i}/${maxRetries})`);
+          await new Promise((r) => setTimeout(r, 2000));
+          continue;
+        }
+        throw e; // non-retryable error
       }
     }
+    throw new Error('Wallet unavailable');
   }
 
-  console.log('[session] Address successfully retrieved:', unshieldedAddress);
+  // Fetch config and shielded addresses in parallel while waiting for address
+  const [unshieldedAddress, config, shieldedAddress] = await Promise.all([
+    getAddress(),
+    api.getConfiguration(),
+    api.getShieldedAddresses().catch(() => ({
+      shieldedCoinPublicKey: '0'.repeat(64),
+      shieldedEncryptionPublicKey: '0'.repeat(64),
+    })),
+  ]);
 
-  // Step 2: Get configuration (service URIs)
-  console.log('[session] Getting configuration...');
-  const config = await api.getConfiguration();
+  console.log('[session] Address:', unshieldedAddress);
   console.log('[session] Config:', config);
-
-  // Step 4: Get shielded addresses (optional, for wallet provider)
-  let shieldedAddress = { shieldedCoinPublicKey: '0'.repeat(64), shieldedEncryptionPublicKey: '0'.repeat(64) };
-  try {
-    shieldedAddress = await api.getShieldedAddresses();
-  } catch (e) {
-    console.warn('[session] Shielded addresses unavailable, using fallback');
-  }
 
   setNetworkId(config.networkId || 'preview');
 
