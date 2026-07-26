@@ -27,6 +27,21 @@ type WalletContextType = {
 };
 
 // ---------------------------------------------------------------------------
+// Helpers: enumerate wallets from window.midnight using Object.values()
+// Wallets inject under UUID keys — never hardcode 'mnLace' or '1am'.
+// ---------------------------------------------------------------------------
+function listWallets(): any[] {
+  const injected = (window as any).midnight;
+  return injected ? Object.values(injected) : [];
+}
+
+function detectWalletType(wallet: any): '1am' | 'lace' {
+  const name = String(wallet?.name ?? '').toLowerCase();
+  if (name.includes('1am')) return '1am';
+  return 'lace';
+}
+
+// ---------------------------------------------------------------------------
 // Context
 // ---------------------------------------------------------------------------
 const WalletContext = createContext<WalletContextType | null>(null);
@@ -47,10 +62,13 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const startedAt = Date.now();
     const id = setInterval(() => {
-      const w1am = (window as any).midnight?.['1am'];
-      const wLace = (window as any).midnight?.mnLace;
-      if (w1am) { setWalletType('1am'); setWalletStatus('detected'); clearInterval(id); return; }
-      if (wLace) { setWalletType('lace'); setWalletStatus('detected'); clearInterval(id); return; }
+      const wallets = listWallets();
+      if (wallets.length > 0) {
+        setWalletType(detectWalletType(wallets[0]));
+        setWalletStatus('detected');
+        clearInterval(id);
+        return;
+      }
       if (Date.now() - startedAt >= 6000) {
         setWalletStatus('not-found');
         clearInterval(id);
@@ -64,30 +82,45 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     connectingRef.current = true;
     setIsConnecting(true);
     try {
-      const wallet = (window as any).midnight?.['1am'] ?? (window as any).midnight?.mnLace;
-      if (!wallet) throw new Error('No wallet found. Please install 1AM or Lace wallet extension.');
+      const wallets = listWallets();
+      const wallet = wallets[0];
+      if (!wallet) throw new Error('No wallet found. Please install a Midnight wallet extension.');
 
+      console.log(`[wallet] Found wallet: ${wallet.name}, connecting to '${network}'...`);
       const api = await wallet.connect(network);
-      console.log(`Wallet connected on network '${network}'`);
+      console.log(`[wallet] connect() resolved`);
+
+      // Check connection status before querying addresses
+      try {
+        const status = await api.getConnectionStatus();
+        console.log('[wallet] Connection status:', status);
+        if (status?.status !== 'connected') {
+          throw new Error(`Wallet status is '${status?.status}'. Please wait for it to finish syncing.`);
+        }
+      } catch (statusErr: any) {
+        // Some wallets don't implement getConnectionStatus — continue anyway
+        console.warn('[wallet] getConnectionStatus not available, continuing...');
+      }
 
       const sess = await createConnectedSession(api);
       setSession(sess);
       setAddress(sess.unshieldedAddress);
+      setWalletType(detectWalletType(wallet));
       setIsConnected(true);
       return sess;
     } catch (err: any) {
       console.error('Wallet connection error:', err);
       const reason = String(err?.reason || err?.message || err);
 
-      if (reason.includes('Network ID mismatch')) {
+      if (reason.includes('Network ID mismatch') || reason.includes('network')) {
         alert(
           `Your wallet is set to a different network than '${network}'.\n\n` +
           'Please open your wallet extension, go to Settings → Network, ' +
           'and switch to the correct network (Preview or Preprod), then try again.'
         );
-      } else if (reason.includes('unavailable')) {
+      } else if (reason.includes('unavailable') || reason.includes('syncing')) {
         alert(
-          'Wallet is still initializing. Please:\n\n' +
+          'Wallet is still syncing. Please:\n\n' +
           '1. Open your wallet extension popup\n' +
           '2. Wait until the loading/sync indicator stops\n' +
           '3. Then click Connect Wallet again'
@@ -112,10 +145,13 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     // Re-detect wallet after disconnect
     const startedAt = Date.now();
     const id = setInterval(() => {
-      const w1am = (window as any).midnight?.['1am'];
-      const wLace = (window as any).midnight?.mnLace;
-      if (w1am) { setWalletType('1am'); setWalletStatus('detected'); clearInterval(id); return; }
-      if (wLace) { setWalletType('lace'); setWalletStatus('detected'); clearInterval(id); return; }
+      const wallets = listWallets();
+      if (wallets.length > 0) {
+        setWalletType(detectWalletType(wallets[0]));
+        setWalletStatus('detected');
+        clearInterval(id);
+        return;
+      }
       if (Date.now() - startedAt >= 3000) { setWalletStatus('not-found'); clearInterval(id); }
     }, 200);
   }, []);

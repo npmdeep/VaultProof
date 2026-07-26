@@ -7,7 +7,7 @@
 [![Tested With](https://img.shields.io/badge/Tested%20With-Vitest-yellow?style=for-the-badge)](https://vitest.dev)
 [![State](https://img.shields.io/badge/Level-4%20Complete-success?style=for-the-badge)](#)
 [![Deploy on Vercel](https://img.shields.io/badge/Deploy-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/new/clone?repository-url=https://github.com/npmdeep/VaultProof&root=frontend)
-[![X (Twitter) Follow](https://img.shields.io/twitter/follow/georgian_deep?style=for-the-badge)](https://x.com/georgian_deep)
+
 
 ---
 
