@@ -34,7 +34,7 @@ VaultProof is a decentralized application (dApp) engineered on the **Midnight Ne
 - **Live Application (Vercel):** *(Will be added upon successful deployment)*
 - **Deployed Contract (Midnight Preprod):** *(Will be added upon successful deployment)*
 - **Demo Video Presentation:** [Watch the Demo Video](https://drive.google.com/file/d/1j9dltIV1BAGeE9YzzNgs25eeJelBFPg2/view?usp=sharing)
-- **Public Brand Presence (X Profile):** [https://x.com/georgian_deep](https://x.com/georgian_deep)
+
 
 ---
 
