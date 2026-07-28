@@ -142,8 +142,7 @@ This repository fulfills the strict progression requirements of the "New Moon to
   - **Live Application:** *(Will be added upon successful deployment)*
   - **Deployed Contract (Preprod):** *(Will be added upon successful deployment)*
   - **Demo Video Presentation:** [Watch the Demo Video](https://drive.google.com/file/d/1j9dltIV1BAGeE9YzzNgs25eeJelBFPg2/view?usp=sharing)
-  - **Public Brand Presence (X Profile):** [https://x.com/georgian_deep](https://x.com/georgian_deep)
-
+    
 ---
 
 ## Project Showcase & Verification Proofs
