@@ -29,13 +29,12 @@ VaultProof is a decentralized application (dApp) engineered on the **Midnight Ne
 
 ---
 
-## Official Submission Links
+## 🌐 Live Deployment
 
-- **Live Application (Vercel):** *(Pending Deployment)*
-- **Deployed Contract (Midnight Preprod):** **Pending**
-- **Demo Video Presentation:** [Watch the Demo Video](https://drive.google.com/file/d/1j9dltIV1BAGeE9YzzNgs25eeJelBFPg2/view?usp=sharing)
-
-
+| Component | Status |
+| --- | --- |
+| VaultArena Frontend | https://vermillion-bonbon-14c327.netlify.app/ |
+| Midnight Preprod Contract | Pending |
 ---
 
 ## Architectural Overview
