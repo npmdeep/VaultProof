@@ -27,3 +27,36 @@ export function validateMidnightAddress(address: string): ValidationResult {
   }
   return { valid: true };
 }
+
+export function validateVoterSecret(secretHex: string): ValidationResult {
+  if (!secretHex || typeof secretHex !== 'string') {
+    return { valid: false, error: 'Voter secret cannot be empty.' };
+  }
+  const clean = secretHex.trim().toLowerCase().replace(/^0x/, '');
+  if (clean.length !== 64) {
+    return {
+      valid: false,
+      error: `Invalid secret length: expected 64 hex characters, got ${clean.length}.`,
+    };
+  }
+  if (!/^[0-9a-f]{64}$/.test(clean)) {
+    return { valid: false, error: 'Secret contains non-hexadecimal characters.' };
+  }
+  if (/^0+$/.test(clean) || /^f+$/.test(clean)) {
+    return {
+      valid: false,
+      error: 'Secret exhibits zero entropy (trivial value). Please use a secure random secret.',
+    };
+  }
+  return { valid: true };
+}
+
+export function validateVoteParams(proposalIndex: number, choice: boolean): ValidationResult {
+  if (proposalIndex < 0 || !Number.isInteger(proposalIndex)) {
+    return { valid: false, error: 'Proposal index must be a non-negative integer.' };
+  }
+  if (typeof choice !== 'boolean') {
+    return { valid: false, error: 'Vote choice must be a boolean (true/false).' };
+  }
+  return { valid: true };
+}
