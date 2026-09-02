@@ -60,3 +60,27 @@ export function validateVoteParams(proposalIndex: number, choice: boolean): Vali
   }
   return { valid: true };
 }
+
+export function computeVotingAnalytics(yesVotes: number, noVotes: number, quorumThreshold: number = 10) {
+  const safeYes = Math.max(0, Number(yesVotes) || 0);
+  const safeNo = Math.max(0, Number(noVotes) || 0);
+  const totalVotes = safeYes + safeNo;
+
+  const quorumPercentage = quorumThreshold > 0
+    ? Math.min(100, Math.round((totalVotes / quorumThreshold) * 100))
+    : 100;
+
+  const yesPercentage = totalVotes > 0 ? Math.round((safeYes / totalVotes) * 100) : 0;
+  const noPercentage = totalVotes > 0 ? Math.round((safeNo / totalVotes) * 100) : 0;
+  const isQuorumReached = totalVotes >= quorumThreshold;
+
+  return {
+    totalVotes,
+    safeYes,
+    safeNo,
+    yesPercentage,
+    noPercentage,
+    quorumPercentage,
+    isQuorumReached,
+  };
+}
