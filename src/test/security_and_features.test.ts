@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   validateMidnightAddress,
   validateVoterSecret,
+  validateVoteParams,
 } from '../validation.js';
 
 describe('VaultProof Security & Validation Engine', () => {
@@ -58,6 +59,18 @@ describe('VaultProof Security & Validation Engine', () => {
     it('rejects secrets with invalid length or non-hex characters', () => {
       expect(validateVoterSecret('short_secret').valid).toBe(false);
       expect(validateVoterSecret('11111111111111111111111111111111111111111111111111111111111111xx').valid).toBe(false);
+    });
+  });
+
+  describe('Voting Parameters Validation', () => {
+    it('accepts valid integer proposal indices and boolean choices', () => {
+      expect(validateVoteParams(0, true).valid).toBe(true);
+      expect(validateVoteParams(5, false).valid).toBe(true);
+    });
+
+    it('rejects negative or fractional proposal indices', () => {
+      expect(validateVoteParams(-1, true).valid).toBe(false);
+      expect(validateVoteParams(1.5, false).valid).toBe(false);
     });
   });
 });
