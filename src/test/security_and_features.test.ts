@@ -3,6 +3,7 @@ import {
   validateMidnightAddress,
   validateVoterSecret,
   validateVoteParams,
+  computeVotingAnalytics,
 } from '../validation.js';
 
 describe('VaultProof Security & Validation Engine', () => {
@@ -71,6 +72,34 @@ describe('VaultProof Security & Validation Engine', () => {
     it('rejects negative or fractional proposal indices', () => {
       expect(validateVoteParams(-1, true).valid).toBe(false);
       expect(validateVoteParams(1.5, false).valid).toBe(false);
+    });
+  });
+
+  describe('Analytics and Quorum Calculations', () => {
+    it('computes correct percentage and quorum stats for balanced votes', () => {
+      const stats = computeVotingAnalytics(6, 4, 10);
+      expect(stats.totalVotes).toBe(10);
+      expect(stats.yesPercentage).toBe(60);
+      expect(stats.noPercentage).toBe(40);
+      expect(stats.quorumPercentage).toBe(100);
+      expect(stats.isQuorumReached).toBe(true);
+    });
+
+    it('handles zero vote edge cases gracefully without NaN', () => {
+      const stats = computeVotingAnalytics(0, 0, 10);
+      expect(stats.totalVotes).toBe(0);
+      expect(stats.yesPercentage).toBe(0);
+      expect(stats.noPercentage).toBe(0);
+      expect(stats.quorumPercentage).toBe(0);
+      expect(stats.isQuorumReached).toBe(false);
+    });
+
+    it('handles negative or undefined inputs safely', () => {
+      // @ts-expect-error test invalid inputs
+      const stats = computeVotingAnalytics(-5, null, 10);
+      expect(stats.totalVotes).toBe(0);
+      expect(stats.safeYes).toBe(0);
+      expect(stats.safeNo).toBe(0);
     });
   });
 });
