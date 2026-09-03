@@ -4,6 +4,7 @@ import {
   validateVoterSecret,
   validateVoteParams,
   computeVotingAnalytics,
+  generateVoteReceipt,
 } from '../validation.js';
 
 describe('VaultProof Security & Validation Engine', () => {
@@ -100,6 +101,26 @@ describe('VaultProof Security & Validation Engine', () => {
       expect(stats.totalVotes).toBe(0);
       expect(stats.safeYes).toBe(0);
       expect(stats.safeNo).toBe(0);
+    });
+  });
+
+  describe('Audit Trail Receipt Generator', () => {
+    it('generates a verifiable cryptographic receipt with checksum', () => {
+      const receipt = generateVoteReceipt(
+        '39767f264df7b2da4ea9ce24b3900f148517c564ec9efbffecad33edcd33332f',
+        'a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90',
+        0,
+        true,
+        'preprod'
+      );
+
+      expect(receipt.version).toBe('1.0.0');
+      expect(receipt.choice).toBe(true);
+      expect(receipt.proposalId).toBe(0);
+      expect(receipt.network).toBe('preprod');
+      expect(receipt.checksum).toBeDefined();
+      expect(receipt.checksum.length).toBe(8);
+      expect(Date.parse(receipt.timestamp)).not.toBeNaN();
     });
   });
 });
