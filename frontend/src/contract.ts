@@ -5,6 +5,7 @@ export { Contract, ledger };
 
 export const witnesses = {
   adminSecret: (ctx: any) => [ctx.privateState, ctx.privateState.adminSecret],
+  voterSecret: (ctx: any) => [ctx.privateState, ctx.privateState.voterSecret],
 };
 
 export const BrowserCompiledVotingContract = CompiledContract.make(
