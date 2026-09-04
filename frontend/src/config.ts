@@ -1,7 +1,7 @@
 // Frontend configuration for VaultProof
 export const config = {
   // Contract address on Midnight Preprod — set via env or after deploy
-  contractAddress: import.meta.env.VITE_CONTRACT_ADDRESS ?? '',
+  contractAddress: localStorage.getItem('DEPLOYED_CONTRACT_ADDRESS') || import.meta.env.VITE_CONTRACT_ADDRESS || '',
   
   // Midnight Preprod infrastructure
   indexer: import.meta.env.VITE_INDEXER_URL ?? 'https://indexer.preprod.midnight.network/api/v1/graphql',
