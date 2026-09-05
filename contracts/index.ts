@@ -18,6 +18,11 @@ export const zkConfigPath = path.resolve(currentDir, 'managed', 'voting');
 
 export const witnesses = {
   adminSecret: (ctx: any) => [ctx.privateState, ctx.privateState.adminSecret],
+  voterSecret: (ctx: any) => {
+    console.log("Wokred: voterSecret = ", ctx.privateState.voterSecret);
+    if (!ctx.privateState.voterSecret) throw new Error("VOTER SECRET IS UNDEFINED");
+    return [ctx.privateState, ctx.privateState.voterSecret];
+  },
 };
 
 export const CompiledVotingContract = CompiledContract.make(
