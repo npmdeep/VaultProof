@@ -44,6 +44,15 @@
         "type-name": "Bytes",
         "length": 32
       }
+    },
+    {
+      "name": "voterSecret",
+      "arguments": [
+      ],
+      "result type": {
+        "type-name": "Bytes",
+        "length": 32
+      }
     }
   ],
   "contracts": [
@@ -84,6 +93,19 @@
       "type": {
         "type-name": "Bytes",
         "length": 32
+      }
+    },
+    {
+      "name": "has_voted",
+      "index": 5,
+      "exported": true,
+      "storage": "Map",
+      "key": {
+        "type-name": "Bytes",
+        "length": 32
+      },
+      "value": {
+        "type-name": "Boolean"
       }
     }
   ]
