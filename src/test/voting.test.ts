@@ -107,6 +107,8 @@ function adminPublicKey(sk: Uint8Array): Uint8Array {
 }
 
 const ADMIN_SECRET = '0000000000000000000000000000000000000000000000000000000000000099';
+const ALICE_VOTER_SECRET = deriveAdminKey('1111111111111111111111111111111111111111111111111111111111111111');
+const BOB_VOTER_SECRET = deriveAdminKey('2222222222222222222222222222222222222222222222222222222222222222');
 
 describe(`Voting Contract (${network})`, () => {
   let wallet: MidnightWalletProvider;
@@ -193,6 +195,8 @@ describe(`Voting Contract (${network})`, () => {
   it('Casts a Yes vote successfully', async () => {
     logger.info('Casting a Yes vote...');
 
+    await providers.privateStateProvider.set(PRIVATE_STATE_ID, { voterSecret: ALICE_VOTER_SECRET });
+
     await (submitCallTx<Contract, 'cast_vote'>)(providers, {
       compiledContract: CompiledVotingContract,
       contractAddress,
@@ -201,16 +205,36 @@ describe(`Voting Contract (${network})`, () => {
       args: [1n],
     });
 
+    const stateAfterVote = await queryLedger(providers);
+    logger.info(`State after Alice vote: total_votes=${stateAfterVote.total_votes}, has_voted=${JSON.stringify(stateAfterVote.has_voted)}`);
+
     logger.info('Yes vote cast successfully.');
   });
 
+  it('Rejects a double vote from the same user', async () => {
+    logger.info('Attempting to double-vote...');
+
+    await expect(
+      (submitCallTx<Contract, 'cast_vote'>)(providers, {
+        compiledContract: CompiledVotingContract,
+        contractAddress,
+        privateStateId: PRIVATE_STATE_ID,
+        circuitId: 'cast_vote',
+        args: [1n],
+      })
+    ).rejects.toThrow();
+  });
+
   it('Casts a No vote successfully', async () => {
-    logger.info('Casting a No vote...');
+    logger.info('Casting a No vote (with a new voter identity)...');
+
+    const bobStateId = 'BobPrivateVotingState';
+    await providers.privateStateProvider.set(bobStateId, { voterSecret: BOB_VOTER_SECRET });
 
     await (submitCallTx<Contract, 'cast_vote'>)(providers, {
       compiledContract: CompiledVotingContract,
       contractAddress,
-      privateStateId: PRIVATE_STATE_ID,
+      privateStateId: bobStateId,
       circuitId: 'cast_vote',
       args: [0n],
     });
