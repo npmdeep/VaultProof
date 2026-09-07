@@ -1,5 +1,6 @@
 import React from 'react';
 import { useWallet } from '../contexts/WalletContext';
+import { config } from '../config';
 
 export default function WalletBanner() {
   const { address, isConnected, walletType, walletStatus, isConnecting, connect, disconnect } = useWallet();
@@ -31,7 +32,7 @@ export default function WalletBanner() {
   return (
     <button
       className="btn btn-primary btn-sm"
-      onClick={() => connect('preview')}
+      onClick={() => connect(config.networkId)}
       disabled={isConnecting || walletStatus === 'not-found'}
     >
       {isConnecting ? (
