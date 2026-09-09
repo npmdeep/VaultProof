@@ -110,9 +110,14 @@ export async function createConnectedSession(api: any): Promise<ConnectedSession
       try {
         console.log(`[session] getUnshieldedAddress attempt ${i}/${maxRetries}...`);
         const res = await api.getUnshieldedAddress();
+        console.log(`[session] getUnshieldedAddress raw response:`, res);
         if (res?.unshieldedAddress) return res.unshieldedAddress;
+        // If res exists but has no unshieldedAddress, check for other shapes
+        if (typeof res === 'string' && res.length > 0) return res;
+        console.warn(`[session] Unexpected response shape, retrying...`);
       } catch (e: any) {
         const reason = String(e?.reason || e?.message || e);
+        console.warn(`[session] getUnshieldedAddress error:`, reason);
         if (i === maxRetries) throw new Error(`Wallet unavailable after ${maxRetries} attempts: ${reason}`);
         if (reason.includes('unavailable') || reason.includes('disconnected') || reason.includes('syncing')) {
           console.warn(`[session] Wallet syncing, retry in 2s... (${i}/${maxRetries})`);
