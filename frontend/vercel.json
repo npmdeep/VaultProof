@@ -1,7 +1,7 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "yarn build",
   "outputDirectory": "dist",
-  "installCommand": "npm install",
+  "installCommand": "yarn install",
   "framework": "vite",
   "rewrites": [
     {
