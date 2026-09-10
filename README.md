@@ -183,3 +183,28 @@ yarn install
 
 ### 3. Smart Contract Compilation
 Compile the Compact zero-knowledge circuits into intermediate representation and generate the strictly-typed TypeScript interfaces:
+```bash
+yarn compile
+yarn copy:managed
+```
+*Note: This command populates the `contracts/managed/voting/` directory with the necessary prover keys and API definitions.*
+
+### 4. Running the Local Midnight Network and Test Suite
+To run the automated tests, you must initialize the local Midnight Docker network (which spins up a local indexer, proof-server, and blockchain node):
+```bash
+yarn env:up
+yarn test:local
+```
+Once testing is complete, gracefully terminate the Docker instances to free up system resources:
+```bash
+yarn env:down
+```
+
+### 5. Running the Frontend Application
+To run the React frontend locally and interact with the smart contract:
+```bash
+cd frontend
+npm install
+npm run dev
+```
+Navigate to `http://localhost:5173`. You must have the **1AM wallet** browser extension installed and configured to the appropriate network (Local or Preprod) to interact with the application.
