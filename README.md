@@ -148,3 +148,38 @@ This repository fulfills the strict progression requirements of the "New Moon to
   - **Deployed Contract (Preprod):** [39767f264df7b2da4ea9ce24b3900f148517c564ec9efbffecad33edcd33332f](https://explorer.1am.xyz/address/39767f264df7b2da4ea9ce24b3900f148517c564ec9efbffecad33edcd33332f?network=preprod)
   - **Demo Video Presentation:** [Watch the Demo Video](https://drive.google.com/file/d/1j9dltIV1BAGeE9YzzNgs25eeJelBFPg2/view?usp=sharing)
     
+---
+
+## Project Showcase & Verification Proofs
+
+### Web UI
+![Web UI 1](assets/ui1.png)
+![Web UI 2](assets/ui2.png)
+
+### Mobile UI
+![Mobile UI](assets/mobui.png)
+
+### CI/CD Pipeline
+![CI/CD Pipeline](assets/cicd.png)
+
+---
+
+## Local Development & Setup Guide
+
+For developers and auditors wishing to verify the Zero-Knowledge circuits and run the application locally, please follow these instructions carefully.
+
+### 1. System Requirements
+- **OS:** Windows Subsystem for Linux 2 (WSL2 - Ubuntu 24.04/26.04) or native Linux/macOS.
+- **Containerization:** Docker Desktop with WSL2 integration enabled.
+- **Runtime:** Node.js (v22.0.0 or higher) and Yarn package manager.
+
+### 2. Dependency Initialization
+Clone the repository and install the workspace dependencies from the root directory:
+```bash
+git clone https://github.com/npmdeep/VaultProof.git
+cd VaultProof
+yarn install
+```
+
+### 3. Smart Contract Compilation
+Compile the Compact zero-knowledge circuits into intermediate representation and generate the strictly-typed TypeScript interfaces:
