@@ -168,7 +168,7 @@ export default function AdminPage() {
                 {copied ? 'Copied Address!' : 'Copy Contract Address'}
               </button>
               <a
-                href={`https://explorer.1am.xyz/address/${deployedAddress}?network=preprod`}
+                href={`https://explorer.1am.xyz/contract/${deployedAddress}?network=preprod`}
                 target="_blank"
                 rel="noreferrer"
                 className="btn btn-secondary flex-1 flex items-center justify-center gap-1 text-xs"
