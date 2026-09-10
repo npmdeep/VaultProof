@@ -29,12 +29,18 @@ VaultProof is a decentralized application (dApp) engineered on the **Midnight Ne
 
 ---
 
-## 🌐 Live Deployment
+## Official Submission Links
 
-| Component | Status |
-| --- | --- |
-| VaultArena Frontend | https://vermillion-bonbon-14c327.netlify.app/ |
-| Midnight Preprod Contract | Pending |
+- **Live Application:** [https://vermillion-bonbon-14c327.netlify.app/](https://vermillion-bonbon-14c327.netlify.app/)
+- **Deployed Contract (Midnight Preprod):** [39767f264df7b2da4ea9ce24b3900f148517c564ec9efbffecad33edcd33332f](https://explorer.1am.xyz/address/39767f264df7b2da4ea9ce24b3900f148517c564ec9efbffecad33edcd33332f?network=preprod)
+- **Demo Video Presentation:** [Watch the Demo Video](https://drive.google.com/file/d/1j9dltIV1BAGeE9YzzNgs25eeJelBFPg2/view?usp=sharing)
+- **Public Brand Presence (X Profile):** [https://x.com/georgian_deep](https://x.com/georgian_deep)
+
+| Component | Status | Network / Endpoint |
+| --- | --- | --- |
+| VaultArena Frontend | Live | [Netlify App](https://vermillion-bonbon-14c327.netlify.app/) |
+| Midnight Preprod Contract | Deployed | `39767f264df7b2da4ea9ce24b3900f148517c564ec9efbffecad33edcd33332f` |
+
 ---
 
 ## Architectural Overview
@@ -92,112 +98,3 @@ pure circuit adminPublicKey(sk: Bytes<32>): Bytes<32> {
 
 constructor(admin_key: Bytes<32>) {
   admin = disclose(admin_key);
-  is_open = true;
-}
-
-export circuit cast_vote(choice: Uint<32>): [] {
-  assert(is_open, "Poll is closed");
-  assert(choice <= 1, "Invalid choice: must be 0 (No) or 1 (Yes)");
-
-  // Conditional increment — the branch taken is hidden inside the ZK proof
-  const yes_inc = choice;
-  const no_inc = (1 - choice) as Uint<32>;
-
-  total_yes.increment(disclose(yes_inc as Uint<16>));
-  total_no.increment(disclose(no_inc as Uint<16>));
-  total_votes.increment(1);
-}
-
-export circuit close_poll(): [] {
-  assert(is_open, "Poll is already closed");
-  const sk = adminSecret();
-  assert(admin == adminPublicKey(sk), "Not authorized: invalid admin key");
-  is_open = false;
-}
-```
-
----
-
-## Hackathon Progression (Levels 1-4)
-
-This repository fulfills the strict progression requirements of the "New Moon to Full" Midnight Builder Journey.
-
-### Level 1: Setup & First Contract
-- **Objective:** Establish the WSL2/Docker toolchain, write the foundational Compact contract, and document the product proposal (Private Voting).
-- **Status:** Complete. The contract successfully compiles, generating the required `zkir` and `bzkir` proving artifacts.
-
-### Level 2: Frontend Integration
-- **Objective:** Develop a robust frontend interface and establish wallet connectivity.
-- **Status:** Complete. The application successfully interfaces with the 1AM wallet via the Midnight DApp Connector API.
-- **Deployed Contract Address (Preprod):** *(Will be added upon successful deployment)*
-
-### Level 3: Production-Grade dApp
-- **Objective:** Implement automated testing, Continuous Integration (CI/CD), and a polished user interface.
-- **Status:** Complete. Vitest suites assert both successful verification and expected failure modes. GitHub Actions workflows automatically test the contract on every push.
-
-### Level 4: MVP Goes Live
-- **Objective:** Deploy the frontend to a production CDN, finalize documentation, and establish a public brand presence.
-- **Status:** Complete.
-  - **Live Application:** *(Will be added upon successful deployment)*
-  - **Deployed Contract (Preprod):** *(Will be added upon successful deployment)*
-  - **Demo Video Presentation:** [Watch the Demo Video](https://drive.google.com/file/d/1j9dltIV1BAGeE9YzzNgs25eeJelBFPg2/view?usp=sharing)
-    
----
-
-## Project Showcase & Verification Proofs
-
-### Web UI
-![Web UI 1](assets/ui1.png)
-![Web UI 2](assets/ui2.png)
-
-### Mobile UI
-![Mobile UI](assets/mobui.png)
-
-### CI/CD Pipeline
-![CI/CD Pipeline](assets/cicd.png)
-
----
-
-## Local Development & Setup Guide
-
-For developers and auditors wishing to verify the Zero-Knowledge circuits and run the application locally, please follow these instructions carefully.
-
-### 1. System Requirements
-- **OS:** Windows Subsystem for Linux 2 (WSL2 - Ubuntu 24.04/26.04) or native Linux/macOS.
-- **Containerization:** Docker Desktop with WSL2 integration enabled.
-- **Runtime:** Node.js (v22.0.0 or higher) and Yarn package manager.
-
-### 2. Dependency Initialization
-Clone the repository and install the workspace dependencies from the root directory:
-```bash
-git clone https://github.com/npmdeep/VaultProof.git
-cd VaultProof
-yarn install
-```
-
-### 3. Smart Contract Compilation
-Compile the Compact zero-knowledge circuits into intermediate representation and generate the strictly-typed TypeScript interfaces:
-```bash
-yarn compile
-```
-*Note: This command populates the `contracts/managed/voting/` directory with the necessary prover keys and API definitions.*
-
-### 4. Running the Local Midnight Network and Test Suite
-To run the automated tests, you must initialize the local Midnight Docker network (which spins up a local indexer, proof-server, and blockchain node):
-```bash
-yarn env:up
-yarn test:local
-```
-Once testing is complete, gracefully terminate the Docker instances to free up system resources:
-```bash
-yarn env:down
-```
-
-### 5. Running the Frontend Application
-To run the React frontend locally and interact with the smart contract:
-```bash
-cd frontend
-npm install
-npm run dev
-```
-Navigate to `http://localhost:5173`. You must have the **1AM wallet** browser extension installed and configured to the appropriate network (Local or Preprod) to interact with the application.
